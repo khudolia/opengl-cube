@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>\\WINCL02\users\khudolia\Desktop\SecondOpenGL\Debug\OpenGL.exe</FullPath>
+      <FullPath>\\WINCL02\users\khudolia\Desktop\opengl-cube\Debug\OpenGL.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

@@ -43,7 +43,6 @@ float rotZ = 0.0f;
 float rotAnim = 0.0f;
 float deltaTime, currentTime;
 bool g_Animate = true;
-
 // arrays for vertex positions, colors and normals
 point4 points[NumVertices];
 color4 colors[NumVertices];
@@ -194,6 +193,8 @@ void display()
 	camera = glm::lookAt(eye, center, up);
 
 	model = glm::rotate(model, (float)glm::radians(rotX), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::rotate(model, (float)glm::radians(rotY), glm::vec3(0.0f, 1.0f, 0.0f));
+	model = glm::rotate(model, (float)glm::radians(rotZ), glm::vec3(0.0f, 0.0f, 1.0f));
 	glUniformMatrix4fv(hModel, 1, GL_FALSE, glm::value_ptr(model));
 
 	glUniformMatrix4fv(hCamera, 1, GL_FALSE, glm::value_ptr(camera));
@@ -216,7 +217,6 @@ void display()
 //=======================================================================
 void keyboard(unsigned char key, int x, int y)
 {
-
 	// select the pressed key
 	switch (key)
 	{
@@ -225,12 +225,17 @@ void keyboard(unsigned char key, int x, int y)
 		case 'x':
 			rotX += 10.0f;
 			break;
+		case 'z':
+			rotY += 10.0f;
+			break;
+		case 'c':
+			rotZ += 10.0f;
+			break;
 
 		case 'q':
 			exit(EXIT_SUCCESS);
 			break;
 	}
-
 	// enforce redrawing of the scene
 	glutPostRedisplay();
 
