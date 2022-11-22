@@ -40,6 +40,11 @@ int g_Index = 0;
 float rotX = 0.0f;
 float rotY = 0.0f;
 float rotZ = 0.0f;
+
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
 float rotAnim = 0.0f;
 float deltaTime, currentTime;
 bool g_Animate = true;
@@ -189,15 +194,18 @@ void display()
 	// ... need to be implemented
 	projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -100.0f, 100.0f);
 
-	glm::vec3 eye(0, 0, 3), center(0, 0, 0), up(0, 1, 0);
-	camera = glm::lookAt(eye, center, up);
+	//glm::vec3 eye(0, 0, 3), center(posX, posY, posZ), up(0, 1, 0);
+	//camera = glm::lookAt(eye, center, up);
+	camera = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
 	model = glm::rotate(model, (float)glm::radians(rotX), glm::vec3(1.0f, 0.0f, 0.0f));
 	model = glm::rotate(model, (float)glm::radians(rotY), glm::vec3(0.0f, 1.0f, 0.0f));
 	model = glm::rotate(model, (float)glm::radians(rotZ), glm::vec3(0.0f, 0.0f, 1.0f));
 	glUniformMatrix4fv(hModel, 1, GL_FALSE, glm::value_ptr(model));
 
+	//camera = glm::translate(camera, (float)glm::radians(rotZ), glm::vec3(0.0f, 0.0f, 1.0f));
 	glUniformMatrix4fv(hCamera, 1, GL_FALSE, glm::value_ptr(camera));
+
 	glUniformMatrix4fv(hProjection, 1, GL_FALSE, glm::value_ptr(projection));
 
 	// set shader parameter if needed (e.g. model, camera, projection matrix, light, material)
@@ -217,6 +225,8 @@ void display()
 //=======================================================================
 void keyboard(unsigned char key, int x, int y)
 {
+	const float cameraSpeed = 0.05f; // adjust accordingly
+
 	// select the pressed key
 	switch (key)
 	{
@@ -231,16 +241,24 @@ void keyboard(unsigned char key, int x, int y)
 		case 'c':
 			rotZ += 10.0f;
 			break;
+		case 'w':
+			cameraPos += cameraSpeed * cameraFront;
 
-		case 'q':
-			exit(EXIT_SUCCESS);
+			break;
+		case 's':
+			cameraPos -= cameraSpeed * cameraFront;
+			break;
+		case 'a':
+			cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+			break;
+		case 'd':
+			cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 			break;
 	}
 	// enforce redrawing of the scene
 	glutPostRedisplay();
 
 }
-
 
 //=======================================================================
 //
