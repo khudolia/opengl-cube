@@ -1,0 +1,3 @@
+﻿  main.cpp
+\\WINCL02\users\khudolia\Desktop\SecondOpenGL\OpenGL\main.cpp(172,45): warning C4305: "Initialisierung": Verkürzung von "double" in "const GLfloat"
+  OpenGL.vcxproj -> \\WINCL02\users\khudolia\Desktop\SecondOpenGL\Debug\OpenGL.exe
