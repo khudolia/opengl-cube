@@ -14,6 +14,10 @@
 #include "utilities.h"
 #include <string>
 
+// settings 
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 800;
+
 // define constant numbers for the box mesh
 const int NumTriangles = 12;				// number faces, 2 triangles each
 const int NumVertices = 3 * NumTriangles;	// number vertices
@@ -26,6 +30,7 @@ typedef glm::vec4 color4;
 void initDrawing();
 void display();
 void keyboard(unsigned char key, int x, int y);
+void mouse(int x, int y);
 void box();
 void triangle(const point4& a, const point4& b, const point4& c, const color4 col);
 
@@ -44,6 +49,14 @@ float rotZ = 0.0f;
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+// Mouse input
+bool firstMouse = true;
+float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
+float pitch = 0.0f;
+float lastX = 800.0f / 2.0;
+float lastY = 600.0 / 2.0;
+float fov = 45.0f;
 
 float rotAnim = 0.0f;
 float deltaTime, currentTime;
@@ -72,7 +85,7 @@ int main(int argc, char* argv[])
 	// initialize and open a window
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-	glutInitWindowSize(800, 800);
+	glutInitWindowSize(SCR_WIDTH, SCR_HEIGHT);
 	glutCreateWindow("Second Shaderbased OpenGL Application");
 
 	glewInit();
@@ -84,6 +97,8 @@ int main(int argc, char* argv[])
 	glutDisplayFunc(display);
 	// register keyboard function 
 	glutKeyboardFunc(keyboard);
+	
+	glutPassiveMotionFunc(mouse);
 
 	// start the main loop
 	glutMainLoop();
@@ -192,7 +207,7 @@ void display()
 
 	// model transformations if needed (use modified var..iables from keyboard-function, e.g. rotX)
 	// ... need to be implemented
-	projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -100.0f, 100.0f);
+	projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
 	//glm::vec3 eye(0, 0, 3), center(posX, posY, posZ), up(0, 1, 0);
 	//camera = glm::lookAt(eye, center, up);
@@ -235,15 +250,14 @@ void keyboard(unsigned char key, int x, int y)
 		case 'x':
 			rotX += 10.0f;
 			break;
-		case 'z':
+		case 'y':
 			rotY += 10.0f;
 			break;
-		case 'c':
+		case 'z':
 			rotZ += 10.0f;
 			break;
 		case 'w':
 			cameraPos += cameraSpeed * cameraFront;
-
 			break;
 		case 's':
 			cameraPos -= cameraSpeed * cameraFront;
@@ -254,12 +268,72 @@ void keyboard(unsigned char key, int x, int y)
 		case 'd':
 			cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 			break;
+		case '+':
+			fov -= 1.0f;
+			break;
+		case '-':
+			fov += 1.0f;
+			break;
 	}
 	// enforce redrawing of the scene
 	glutPostRedisplay();
 
 }
 
+void mouse_input(int button, int state, int x, int y)
+{
+	// Wheel reports as button 3(scroll up) and button 4(scroll down)
+	if ((button == 3) || (button == 4)) // It's a wheel event
+	{
+		// Each wheel event reports like a button click, GLUT_DOWN then GLUT_UP
+		if (state == GLUT_UP) return; // Disregard redundant GLUT_UP events
+		printf("Scroll %s At %d %d\n", (button == 3) ? "Up" : "Down", x, y);
+
+	}
+	else {  // normal button event
+		printf("Button %s At %d %d\n", (state == GLUT_DOWN) ? "Down" : "Up", x, y);
+	}
+
+	
+}
+
+void mouse(int x, int y) {
+	float xpos = static_cast<float>(x);
+	float ypos = static_cast<float>(y);
+
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+	lastX = xpos;
+	lastY = ypos;
+
+	float sensitivity = 0.1f; // change this value to your liking
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+	// make sure that when pitch is out of bounds, screen doesn't get flipped
+	if (pitch > 89.0f)
+		pitch = 89.0f;
+	if (pitch < -89.0f)
+		pitch = -89.0f;
+
+	glm::vec3 front;
+	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	front.y = sin(glm::radians(pitch));
+	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	cameraFront = glm::normalize(front);
+
+	glutPostRedisplay();
+}
 //=======================================================================
 //
 // generates a 3D-Box with 8 vertices and 6 faces/12 triangles 
