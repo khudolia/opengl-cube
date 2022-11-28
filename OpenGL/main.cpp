@@ -274,14 +274,20 @@ void keyboardDown(unsigned char key, int x, int y)
 //=======================================================================
 void keyboard()
 {
-	const float cameraSpeed = 0.05f; // adjust accordingly
+	const float cameraSpeed = 0.1f; // adjust accordingly
 
 	if(keystates['x'])
 		rotX += 10.0f;
+	if(keystates['X'])
+		rotX -= 10.0f;
 	if(keystates['y'])
 		rotY += 10.0f;
+	if(keystates['Y'])
+		rotY -= 10.0f;
 	if(keystates['z'])
 		rotZ += 10.0f;
+	if(keystates['Z'])
+		rotZ -= 10.0f;
 
 	if(keystates['w'])
 		cameraPos += cameraSpeed * cameraFront;
@@ -297,10 +303,6 @@ void keyboard()
 	
 	if(keystates['+'] && fov > 1.0f)
 		fov -= 1.0f; 
-
-	printf("%.6f\n", fov);
-	printf("%d\n", fov > 0.0f); // prints 1
-
 
 	// enforce redrawing of the scene
 	glutPostRedisplay();
