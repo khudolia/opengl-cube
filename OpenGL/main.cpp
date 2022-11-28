@@ -5,8 +5,8 @@
 // object and camera transformations, shader implementation
 //
 //
-// Name:
-// Matrikelnummer:
+// Name: Andrii Khudolii
+// Matrikelnummer: 807343
 //
 //=======================================================================
 #include "Dependencies/glew/glew.h"

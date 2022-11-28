@@ -1,7 +1,7 @@
 //
 // vertex shader: WS 22/23
-// Name:
-// Matrikelnummer:
+// Name: Andrii Khudolii
+// Matrikelnummer: 807343
 //
 
 #version 420 core
