@@ -62,6 +62,7 @@ float pitch = 0.0f;
 float lastX = 800.0f / 2.0;
 float lastY = 600.0 / 2.0;
 float fov = 45.0f;
+bool isPerspective = true;
 
 float rotAnim = 0.0f;
 float deltaTime, currentTime;
@@ -214,7 +215,11 @@ void display()
 
 	// model transformations if needed (use modified var..iables from keyboard-function, e.g. rotX)
 	// ... need to be implemented
-	projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+	if(isPerspective)
+		projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+	else
+		projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -100.0f, 100.0f);
+
 
 	//glm::vec3 eye(0, 0, 3), center(posX, posY, posZ), up(0, 1, 0);
 	//camera = glm::lookAt(eye, center, up);
@@ -300,9 +305,13 @@ void keyboard()
 
 	if(keystates['-'] && fov < 100.0f)
 		fov += 1.0f;
-	
 	if(keystates['+'] && fov > 1.0f)
-		fov -= 1.0f; 
+		fov -= 1.0f;
+
+	if (keystates['o'])
+		isPerspective = false;
+	if (keystates['p'])
+		isPerspective = true;
 
 	// enforce redrawing of the scene
 	glutPostRedisplay();
