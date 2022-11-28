@@ -64,6 +64,8 @@ float lastY = 600.0 / 2.0;
 float fov = 45.0f;
 bool isPerspective = true;
 
+float colorSaturation = 1.0f;
+
 float rotAnim = 0.0f;
 float deltaTime, currentTime;
 bool g_Animate = true;
@@ -79,6 +81,7 @@ GLuint  hModel, hCamera, hProjection;
 // variables to control uniform intensity in fragment shader
 GLuint hIntensity;
 GLfloat fIntensity;
+GLuint vboPos, vboCol;
 
 
 //=======================================================================
@@ -123,7 +126,6 @@ int main(int argc, char* argv[])
 //=======================================================================
 void initDrawing()
 {
-	GLuint vboPos, vboCol;
 
 	// =======================================================
 	// load or create models
@@ -152,7 +154,7 @@ void initDrawing()
 	glGenVertexArrays(1, &vao1);
 	glBindVertexArray(vao1);
 
-	
+
 	// =======================================================
 	// Buffer objects:
 	// Create and initialize buffer objects to copy vertex data (e.g. position, color)
@@ -160,7 +162,7 @@ void initDrawing()
 
 	// generate and manage buffer object for vertex coordinates
 	// transfer position data to the GPU
-	glGenBuffers(1,&vboPos);
+	glGenBuffers(1, &vboPos);
 	glBindBuffer(GL_ARRAY_BUFFER, vboPos);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
 	// link to shader where to find the vertex coordinates
@@ -169,13 +171,12 @@ void initDrawing()
 
 	// generate and manage buffer object for vertex color
 	// transfer color data to the GPU
-	glGenBuffers(1,&vboCol);
+	glGenBuffers(1, &vboCol);
 	glBindBuffer(GL_ARRAY_BUFFER, vboCol);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
 	// link to shader where to find the vertex color
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
-
 
 	// Load location for uniform variable from shader program
 	// for the model, camera and projection matrix
@@ -194,7 +195,6 @@ void initDrawing()
 //=======================================================================
 void display()
 {
-
 	// define background color
 	const GLfloat color[] = { 0.9, 0.9, 0.9, 1 };
 
@@ -208,14 +208,14 @@ void display()
 	glm::mat4 camera = glm::mat4(1.0);
 	// declare and initalize projection matrix
 	glm::mat4 projection = glm::mat4(1.0);
-	
+
 	// define camera settings (position, orientation, projection mode)
 	// ... need to be implemented
 
 
 	// model transformations if needed (use modified var..iables from keyboard-function, e.g. rotX)
 	// ... need to be implemented
-	if(isPerspective)
+	if (isPerspective)
 		projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 	else
 		projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -100.0f, 100.0f);
@@ -240,8 +240,11 @@ void display()
 
 	// activate object rendering - object to render will be controlled by the corresponding
 	// VertexArrayObject; shader to use will be controlled by the shader program variable
+
+
+
 	glDrawArrays(GL_TRIANGLES, 0, sizeof(points));
-	
+
 	glutSwapBuffers();
 }
 
@@ -281,37 +284,50 @@ void keyboard()
 {
 	const float cameraSpeed = 0.1f; // adjust accordingly
 
-	if(keystates['x'])
+	if (keystates['x'])
 		rotX += 10.0f;
-	if(keystates['X'])
+	if (keystates['X'])
 		rotX -= 10.0f;
-	if(keystates['y'])
+	if (keystates['y'])
 		rotY += 10.0f;
-	if(keystates['Y'])
+	if (keystates['Y'])
 		rotY -= 10.0f;
-	if(keystates['z'])
+	if (keystates['z'])
 		rotZ += 10.0f;
-	if(keystates['Z'])
+	if (keystates['Z'])
 		rotZ -= 10.0f;
 
-	if(keystates['w'])
+	if (keystates['w'])
 		cameraPos += cameraSpeed * cameraFront;
-	if(keystates['s'])
+	if (keystates['s'])
 		cameraPos -= cameraSpeed * cameraFront;
-	if(keystates['a'])
+	if (keystates['a'])
 		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-	if(keystates['d'])
+	if (keystates['d'])
 		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 
-	if(keystates['-'] && fov < 100.0f)
+	if (keystates['-'] && fov < 100.0f)
 		fov += 1.0f;
-	if(keystates['+'] && fov > 1.0f)
+	if (keystates['+'] && fov > 1.0f)
 		fov -= 1.0f;
+
+	if (keystates['i'] && colorSaturation < 1.0f)
+		colorSaturation += .1f;
+	if (keystates['l'] && colorSaturation > .0f)
+		colorSaturation -= 0.1f;
+
+	/// update colors intensity
+	if ((keystates['i'] && colorSaturation < 1.0f) || (keystates['l'] && colorSaturation >= .0f)) {
+		box();
+		glBindBuffer(GL_ARRAY_BUFFER, vboCol);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+	}
 
 	if (keystates['o'])
 		isPerspective = false;
 	if (keystates['p'])
 		isPerspective = true;
+
 
 	// enforce redrawing of the scene
 	glutPostRedisplay();
@@ -363,6 +379,8 @@ void mouse(int x, int y) {
 //=======================================================================
 void box()
 {
+	g_Index = 0;
+
 	// define 8 box vertices
 	// and the center of the box at the origin
 	point4 v[8] = {
@@ -376,14 +394,12 @@ void box()
 		glm::vec4(0.5f, 0.5f, -0.5f, 1.0f)
 	};
 
-	// define a color for each surface of the box
-	color4 front = color4(1.0f, 0.0f, 1.0f, 1.0f);
-	color4 back = color4(0.0f, 1.0f, 0.0f, 1.0f);
-	color4 left = color4(1.0f, 0.0f, 0.0f, 1.0f);
-	color4 right = color4(0.0f, 1.0f, 1.0f, 1.0f);
-	color4 top = color4(0.0f, 0.0f, 1.0f, 1.0f);
-	color4 bottom = color4(1.0f, 1.0f, 0.0f, 1.0f);
-
+	color4 front = color4(1, 0, 1, 1) * colorSaturation;
+	color4 back = color4(0, 1, 0, 1) * colorSaturation;
+	color4 left = color4(1, 0, 0, 1) * colorSaturation;
+	color4 right = color4(0, 1, 1, 1) * colorSaturation;
+	color4 top = color4(0, 0, 1, 1) * colorSaturation;
+	color4 bottom = color4(1, 1, 0, 1) * colorSaturation;
 	// define the 12 triangles, counterclockwise
 	// front => mangenta
 	triangle(v[0], v[1], v[2], front);
@@ -408,7 +424,6 @@ void box()
 	// bottom => yellow
 	triangle(v[5], v[0], v[3], bottom);
 	triangle(v[5], v[4], v[0], bottom);
-
 }
 
 //=======================================================================
@@ -419,8 +434,6 @@ void box()
 //=======================================================================
 void triangle(const point4& a, const point4& b, const point4& c, const color4 col)
 {
-
-
 	//vec3  normal = normalize( cross(b - a, c - b) );
 	// calculate normal via cross product based on two vectors between the vertices
 	glm::vec3  normal = glm::cross(glm::vec3(b) - glm::vec3(a), glm::vec3(c) - glm::vec3(b));
