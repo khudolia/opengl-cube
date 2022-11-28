@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\OpenGL"
   ],
-  "SelectedNode": "\\OpenGL.sln",
+  "SelectedNode": "\\OpenGL\\main.cpp",
   "PreviewInSolutionExplorer": false
 }

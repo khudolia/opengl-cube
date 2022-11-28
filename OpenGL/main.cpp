@@ -29,8 +29,13 @@ typedef glm::vec4 color4;
 // function declaration
 void initDrawing();
 void display();
-void keyboard(unsigned char key, int x, int y);
+
+void keyboard();
+void keyboardUp(unsigned char key, int x, int y);
+void keyboardDown(unsigned char key, int x, int y);
+
 void mouse(int x, int y);
+
 void box();
 void triangle(const point4& a, const point4& b, const point4& c, const color4 col);
 
@@ -65,7 +70,7 @@ bool g_Animate = true;
 point4 points[NumVertices];
 color4 colors[NumVertices];
 glm::vec3   normals[NumVertices];
-
+bool keystates[256];
 
 // Model-view and projection matrices uniform location
 GLuint  hModel, hCamera, hProjection;
@@ -96,9 +101,11 @@ int main(int argc, char* argv[])
 	// register display function 
 	glutDisplayFunc(display);
 	// register keyboard function 
-	glutKeyboardFunc(keyboard);
-	
-	glutPassiveMotionFunc(mouse);
+	glutKeyboardFunc(keyboardDown);
+	glutKeyboardUpFunc(keyboardUp);
+	glutSetKeyRepeat(GLUT_KEY_REPEAT_ON);
+
+	glutMotionFunc(mouse);
 
 	// start the main loop
 	glutMainLoop();
@@ -238,63 +245,66 @@ void display()
 // keyboard function, will be called whenever a key is pressed 
 //
 //=======================================================================
-void keyboard(unsigned char key, int x, int y)
+void keyboardUp(unsigned char key, int x, int y)
 {
-	const float cameraSpeed = 0.05f; // adjust accordingly
+	keystates[key] = false;
 
-	// select the pressed key
-	switch (key)
-	{
-		// handle interaction
-		// e.g. change the rotation angle about the x-axis
-		case 'x':
-			rotX += 10.0f;
-			break;
-		case 'y':
-			rotY += 10.0f;
-			break;
-		case 'z':
-			rotZ += 10.0f;
-			break;
-		case 'w':
-			cameraPos += cameraSpeed * cameraFront;
-			break;
-		case 's':
-			cameraPos -= cameraSpeed * cameraFront;
-			break;
-		case 'a':
-			cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-			break;
-		case 'd':
-			cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-			break;
-		case '+':
-			fov -= 1.0f;
-			break;
-		case '-':
-			fov += 1.0f;
-			break;
-	}
-	// enforce redrawing of the scene
+	keyboard();
+	glutPostRedisplay();
+}
+
+//=======================================================================
+//
+// keyboard function, will be called whenever a key is pressed 
+//
+//=======================================================================
+void keyboardDown(unsigned char key, int x, int y)
+{
+	keystates[key] = true;
+
+	keyboard();
 	glutPostRedisplay();
 
 }
 
-void mouse_input(int button, int state, int x, int y)
+//=======================================================================
+//
+// keyboard function, will be called whenever a key is pressed 
+//
+//=======================================================================
+void keyboard()
 {
-	// Wheel reports as button 3(scroll up) and button 4(scroll down)
-	if ((button == 3) || (button == 4)) // It's a wheel event
-	{
-		// Each wheel event reports like a button click, GLUT_DOWN then GLUT_UP
-		if (state == GLUT_UP) return; // Disregard redundant GLUT_UP events
-		printf("Scroll %s At %d %d\n", (button == 3) ? "Up" : "Down", x, y);
+	const float cameraSpeed = 0.05f; // adjust accordingly
 
-	}
-	else {  // normal button event
-		printf("Button %s At %d %d\n", (state == GLUT_DOWN) ? "Down" : "Up", x, y);
-	}
+	if(keystates['x'])
+		rotX += 10.0f;
+	if(keystates['y'])
+		rotY += 10.0f;
+	if(keystates['z'])
+		rotZ += 10.0f;
 
+	if(keystates['w'])
+		cameraPos += cameraSpeed * cameraFront;
+	if(keystates['s'])
+		cameraPos -= cameraSpeed * cameraFront;
+	if(keystates['a'])
+		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	if(keystates['d'])
+		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+
+	if(keystates['-'] && fov < 100.0f)
+		fov += 1.0f;
 	
+	if(keystates['+'] && fov > 1.0f)
+		fov -= 1.0f; 
+
+	printf("%.6f\n", fov);
+	printf("%d\n", fov > 0.0f); // prints 1
+
+
+	// enforce redrawing of the scene
+	glutPostRedisplay();
+
 }
 
 void mouse(int x, int y) {
@@ -334,6 +344,7 @@ void mouse(int x, int y) {
 
 	glutPostRedisplay();
 }
+
 //=======================================================================
 //
 // generates a 3D-Box with 8 vertices and 6 faces/12 triangles 
