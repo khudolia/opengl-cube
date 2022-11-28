@@ -45,12 +45,12 @@ GLuint vPosition;			// entry point for vertex positions into the vertex shader
 GLuint vNormal;				// entry point for vertex normals into the vertex shader
 GLuint vColor;				// entry point for vertex color into the vertex shader
 GLuint vao1 = 0;
-int g_Mode = 0;
 int g_Index = 0;
 float rotX = 0.0f;
 float rotY = 0.0f;
 float rotZ = 0.0f;
 
+const float cameraSpeed = 0.1f;
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -59,8 +59,8 @@ glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 bool firstMouse = true;
 float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
 float pitch = 0.0f;
-float lastX = 800.0f / 2.0;
-float lastY = 600.0 / 2.0;
+float lastX = SCR_WIDTH / 2.0;
+float lastY = SCR_HEIGHT / 2.0;
 float fov = 45.0f;
 bool isPerspective = true;
 
@@ -73,6 +73,9 @@ bool g_Animate = true;
 point4 points[NumVertices];
 color4 colors[NumVertices];
 glm::vec3   normals[NumVertices];
+
+/// writing the keys status so user can use multiple keys at the same time
+/// and not just one at time
 bool keystates[256];
 
 // Model-view and projection matrices uniform location
@@ -107,8 +110,11 @@ int main(int argc, char* argv[])
 	// register keyboard function 
 	glutKeyboardFunc(keyboardDown);
 	glutKeyboardUpFunc(keyboardUp);
+
+	// setting key repeat 1, so status of keys can be updated
 	glutSetKeyRepeat(GLUT_KEY_REPEAT_ON);
 
+	/// register mouse input
 	glutMotionFunc(mouse);
 
 	// start the main loop
@@ -183,8 +189,6 @@ void initDrawing()
 	hModel = glGetUniformLocation(program, "Model");
 	hCamera = glGetUniformLocation(program, "Camera");
 	hProjection = glGetUniformLocation(program, "Projection");
-
-
 }
 
 
@@ -209,39 +213,26 @@ void display()
 	// declare and initalize projection matrix
 	glm::mat4 projection = glm::mat4(1.0);
 
-	// define camera settings (position, orientation, projection mode)
-	// ... need to be implemented
-
-
-	// model transformations if needed (use modified var..iables from keyboard-function, e.g. rotX)
-	// ... need to be implemented
+	/// changing camera view type
 	if (isPerspective)
+		// fov - zoom of camera
 		projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 	else
 		projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -100.0f, 100.0f);
 
 
-	//glm::vec3 eye(0, 0, 3), center(posX, posY, posZ), up(0, 1, 0);
-	//camera = glm::lookAt(eye, center, up);
+	// setting camera position
 	camera = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
+	// setting object rotation
 	model = glm::rotate(model, (float)glm::radians(rotX), glm::vec3(1.0f, 0.0f, 0.0f));
 	model = glm::rotate(model, (float)glm::radians(rotY), glm::vec3(0.0f, 1.0f, 0.0f));
 	model = glm::rotate(model, (float)glm::radians(rotZ), glm::vec3(0.0f, 0.0f, 1.0f));
+	
+	// sending it to the gl
 	glUniformMatrix4fv(hModel, 1, GL_FALSE, glm::value_ptr(model));
-
-	//camera = glm::translate(camera, (float)glm::radians(rotZ), glm::vec3(0.0f, 0.0f, 1.0f));
 	glUniformMatrix4fv(hCamera, 1, GL_FALSE, glm::value_ptr(camera));
-
 	glUniformMatrix4fv(hProjection, 1, GL_FALSE, glm::value_ptr(projection));
-
-	// set shader parameter if needed (e.g. model, camera, projection matrix, light, material)
-	// ... need to be implemented
-
-	// activate object rendering - object to render will be controlled by the corresponding
-	// VertexArrayObject; shader to use will be controlled by the shader program variable
-
-
 
 	glDrawArrays(GL_TRIANGLES, 0, sizeof(points));
 
@@ -250,29 +241,28 @@ void display()
 
 //=======================================================================
 //
-// keyboard function, will be called whenever a key is pressed 
+// keyboard function, will be called whenever a key is up 
 //
 //=======================================================================
 void keyboardUp(unsigned char key, int x, int y)
 {
+	// set the key state
 	keystates[key] = false;
 
 	keyboard();
-	glutPostRedisplay();
 }
 
 //=======================================================================
 //
-// keyboard function, will be called whenever a key is pressed 
+// keyboard function, will be called whenever a key is down 
 //
 //=======================================================================
 void keyboardDown(unsigned char key, int x, int y)
 {
+	// set the key state
 	keystates[key] = true;
 
 	keyboard();
-	glutPostRedisplay();
-
 }
 
 //=======================================================================
@@ -282,7 +272,6 @@ void keyboardDown(unsigned char key, int x, int y)
 //=======================================================================
 void keyboard()
 {
-	const float cameraSpeed = 0.1f; // adjust accordingly
 
 	if (keystates['x'])
 		rotX += 10.0f;
@@ -319,6 +308,8 @@ void keyboard()
 	/// update colors intensity
 	if ((keystates['i'] && colorSaturation < 1.0f) || (keystates['l'] && colorSaturation >= .0f)) {
 		box();
+
+		// send color data to the shader
 		glBindBuffer(GL_ARRAY_BUFFER, vboCol);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
 	}
@@ -331,9 +322,11 @@ void keyboard()
 
 	// enforce redrawing of the scene
 	glutPostRedisplay();
-
 }
 
+/// <summary>
+/// Rotating camera using mouse input
+/// </summary>
 void mouse(int x, int y) {
 	float xpos = static_cast<float>(x);
 	float ypos = static_cast<float>(y);
@@ -350,7 +343,7 @@ void mouse(int x, int y) {
 	lastX = xpos;
 	lastY = ypos;
 
-	float sensitivity = 0.1f; // change this value to your liking
+	float sensitivity = 0.1f;
 	xoffset *= sensitivity;
 	yoffset *= sensitivity;
 
@@ -394,6 +387,7 @@ void box()
 		glm::vec4(0.5f, 0.5f, -0.5f, 1.0f)
 	};
 
+	// multiplining by saturation so user can controll intensity of the color
 	color4 front = color4(1, 0, 1, 1) * colorSaturation;
 	color4 back = color4(0, 1, 0, 1) * colorSaturation;
 	color4 left = color4(1, 0, 0, 1) * colorSaturation;
